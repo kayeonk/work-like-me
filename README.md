@@ -52,18 +52,21 @@ source selection → a short interview → review → install. Nothing leaves yo
 > Your personal data lives in **`~/.my-persona/`** — outside the plugin — so it survives
 > updates and is never shipped.
 
-## Commands
+## Skills
 
-After installing, these slash commands are available (namespaced by the plugin):
+The plugin provides four skills — they work in **both** Claude Code and Codex.
 
-| Command | What it does |
-|---------|--------------|
-| `/my-persona:create` | Generate your persona from session logs and install it |
-| `/my-persona:dashboard` | Open the local dashboard to favorite / pause rules and apply |
-| `/my-persona:update` | Review newly accumulated signals and propose rule updates |
-| `/my-persona:auto` | Turn auto-suggested persona updates (over time) on/off |
+| Skill | What it does |
+|-------|--------------|
+| `create` | Generate your persona from session logs and install it |
+| `dashboard` | Open the local dashboard to favorite / pause rules and apply |
+| `update` | Review newly accumulated signals and propose rule updates |
+| `auto` | Turn auto-suggested persona updates (over time) on/off |
 
-You can also just say **"내 페르소나 만들어줘"** (or "make my persona") to start.
+How to invoke:
+- **Claude Code** — type `/` and pick `/my-persona:create` (skills show as `/name` shortcuts).
+- **Codex** — type `$create`, use the `/skills` picker, or `@my-persona`.
+- **Either** — just say **"내 페르소나 만들어줘"** (or "make my persona"); the matching skill activates from its description.
 
 ## How it works
 
