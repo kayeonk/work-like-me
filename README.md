@@ -28,24 +28,23 @@ Unlike fictional "persona" skills or one-off "summarize my chat history" prompts
 - Python 3
 - Optional: Codex CLI session logs
 
-## ⚡ 1-Minute Install
+## ⚡ Install (Claude Code plugin)
 
-```bash
-# 1) Clone straight into your Claude Code skills folder
-git clone https://github.com/<your-username>/my-persona.git ~/.claude/skills/my-persona
-
-# 2) (optional) confirm Python 3 is available
-python3 --version
+```text
+# 1) Add this repo as a marketplace (a private repo works if you have access)
+/plugin marketplace add kayeonk/work-like-me
+# 2) Install the plugin
+/plugin install my-persona@kayeon-plugins
+# 3) Activate
+/reload-plugins
 ```
 
-Then open Claude Code and say:
+Then just say: **"내 페르소나 만들어줘"** (or `make my persona`). The skill walks you through
+source selection → a short interview → review → install. Nothing leaves your machine.
 
-> **"make my persona"**  (or `내 페르소나 만들어줘`)
-
-That's it. The skill walks you through source selection → a short interview → review →
-install. Nothing leaves your machine.
-
-> Already have a `~/.claude/skills/my-persona`? Remove it first, or clone elsewhere and copy in.
+> **Local development:** `/plugin marketplace add ~/path/to/my-persona`, then install as above.
+> Your personal data lives in **`~/.my-persona/`** — outside the plugin — so it survives
+> updates and is never shipped.
 
 ## How it works
 
@@ -71,8 +70,9 @@ the installed prompt; install is idempotent (writes only inside a marked block, 
   new (redacted) signals in `.pending/`; when enough pile up it flags for review. Say
   *"my-persona 업데이트"* to see **proposed** rule changes — nothing is applied without your OK.
 
-> `rules.json`, `.msgs.jsonl`, `.pending/` are your personal data — gitignored, never shipped.
-> The repo carries only generic tooling + `rules.example.json` (a format template).
+> Your personal data (`rules.json`, `.msgs.jsonl`, `.pending/`) lives in **`~/.my-persona/`** —
+> outside the plugin, so it survives plugin updates and is never shipped. The repo/plugin
+> carries only generic tooling + `rules.example.json` (a format template).
 
 ## Known limitations (honest)
 

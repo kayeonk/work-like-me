@@ -12,8 +12,9 @@
 import argparse, json, os, subprocess, webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-RULES = os.path.join(HERE, "rules.json")
+HERE = os.path.dirname(os.path.abspath(__file__))          # 코드 위치(플러그인/스킬 폴더)
+DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))  # 개인 데이터
+RULES = os.path.join(DATA_DIR, "rules.json")
 
 
 def load():
@@ -155,7 +156,7 @@ class H(BaseHTTPRequestHandler):
             self._send(json.dumps(load(), ensure_ascii=False), "application/json")
             return
         d = load()
-        flag = os.path.join(HERE, ".pending", "flag")
+        flag = os.path.join(DATA_DIR, ".pending", "flag")
         pend = '<span class="badge pending">새로 반영할 내용이 있습니다</span>' \
             if os.path.exists(flag) else ""
         ident = (d.get("meta", {}).get("identity", "") or "")[:120]

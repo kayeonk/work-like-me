@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """추출된 발화에서 판단·소통 패턴 빈도를 집계. 원문은 저장/출력하지 않고 빈도만 낸다."""
-import json, re, sys, argparse
+import json, re, sys, argparse, os
 from collections import defaultdict
+
+DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
 
 # 우선순위 축(가치관·기술판단) 중심 패턴
 PATTERNS = {
@@ -31,7 +33,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="inp", default=None)
     a = ap.parse_args()
-    path = a.inp or __import__("os").path.expanduser("~/.claude/skills/my-persona/.msgs.jsonl")
+    path = a.inp or os.path.join(DATA_DIR, ".msgs.jsonl")
     msgs = [json.loads(l)["t"] for l in open(path, encoding="utf-8")]
     comp = {k: [re.compile(p, re.I) for p in v] for k, v in PATTERNS.items()}
 

@@ -8,6 +8,8 @@
 """
 import argparse, json, os
 
+DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
+
 # 카테고리 표시 순서와 제목
 CAT_ORDER = [
     ("절대규칙", "절대 규칙 (하지 마라 / 반드시)"),
@@ -80,7 +82,7 @@ def compile_md(data):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--rules", default=os.path.expanduser("~/.claude/skills/my-persona/rules.json"))
+    ap.add_argument("--rules", default=os.path.join(DATA_DIR, "rules.json"))
     ap.add_argument("--out", default="")
     a = ap.parse_args()
     data = json.load(open(a.rules, encoding="utf-8"))

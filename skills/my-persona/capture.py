@@ -15,9 +15,10 @@
 import json, os, sys, glob
 from datetime import datetime, timezone
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__))          # 코드 위치(플러그인/스킬 폴더)
 sys.path.insert(0, HERE)
-PENDING_DIR = os.path.join(HERE, ".pending")
+DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))  # 개인 데이터
+PENDING_DIR = os.path.join(DATA_DIR, ".pending")
 QUEUE = os.path.join(PENDING_DIR, "queue.jsonl")
 FLAG = os.path.join(PENDING_DIR, "flag")
 STATE = os.path.join(PENDING_DIR, "state.json")

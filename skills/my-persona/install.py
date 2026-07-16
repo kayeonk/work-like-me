@@ -14,6 +14,7 @@
 import argparse, os, shutil, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
 
 START = "<!-- my-persona:start -->"
 END = "<!-- my-persona:end -->"
@@ -38,7 +39,7 @@ def main():
     ap.add_argument("--prompt-file", default="")
     ap.add_argument("--from-rules", action="store_true",
                     help="rules.json을 compile.py로 컴파일해 설치")
-    ap.add_argument("--rules", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "rules.json"))
+    ap.add_argument("--rules", default=os.path.join(DATA_DIR, "rules.json"))
     ap.add_argument("--target", required=True)
     ap.add_argument("--apply", action="store_true")
     a = ap.parse_args()

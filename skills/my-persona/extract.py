@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 
 CLAUDE = os.path.expanduser("~/.claude/projects")
 CODEX = os.path.expanduser("~/.codex/sessions")
+# 개인 데이터는 스킬/플러그인 폴더가 아니라 안정적 사용자 경로에 저장(플러그인 업데이트에도 보존)
+DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
 
 NOISE = re.compile(
     r"<environment_context>|<system-reminder>|<command-name>|local-command-stdout|"
@@ -196,11 +198,12 @@ def main():
     ap.add_argument("--sources", default="claude,codex")
     ap.add_argument("--projects", default="")
     ap.add_argument("--since", default="")
-    ap.add_argument("--out", default=os.path.expanduser("~/.claude/skills/my-persona/.msgs.jsonl"))
+    ap.add_argument("--out", default=os.path.join(DATA_DIR, ".msgs.jsonl"))
     a = ap.parse_args()
     if a.list:
         list_sources()
         return
+    os.makedirs(DATA_DIR, exist_ok=True)
     sources = [s.strip() for s in a.sources.split(",") if s.strip()]
     projects = [p for p in a.projects.split(",") if p.strip()] if a.projects else []
     extract(sources, projects, a.since or None, a.out)

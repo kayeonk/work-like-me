@@ -6,11 +6,13 @@
 """
 import json, os, argparse
 
+DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
+
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="inp",
-                    default=os.path.expanduser("~/.claude/skills/my-persona/.msgs.jsonl"))
+                    default=os.path.join(DATA_DIR, ".msgs.jsonl"))
     ap.add_argument("--n", type=int, default=150)
     ap.add_argument("--min", type=int, default=8)
     ap.add_argument("--max", type=int, default=500)
