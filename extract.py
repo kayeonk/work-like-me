@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""로컬 AI 세션에서 '사용자 발화'만 추출 (Claude Code + Codex CLI).
+
+두 가지 모드:
+  --list                       사용 가능한 소스를 탐지해 JSON으로 출력(스코프 질문용)
+  (기본)                        발화 추출 → --out 경로에 jsonl 저장
+
+필터:
+  --sources claude,codex       사용할 소스 (기본: 존재하는 것 전부)
+  --projects <substr,substr>   Claude 프로젝트 경로/Codex cwd에 부분일치하는 것만
+  --since YYYY-MM-DD           해당 날짜 이후 발화만
+  --out <path>                 추출 결과 저장 경로
+"""
+import json, os, re, glob, argparse
+from datetime import datetime, timezone
+
+CLAUDE = os.path.expanduser("~/.claude/projects")
+CODEX = os.path.expanduser("~/.codex/sessions")
+
+NOISE = re.compile(
+    r"<environment_context>|<system-reminder>|<command-name>|local-command-stdout|"
+    r"\[Request interrupted|Caveat:|<user-prompt-submit-hook>|SessionStart|"
+    r"UserPromptSubmit|tool_result|stdout|stderr", re.I)
+
+
+def clean(text):
+    if not isinstance(text, str):
+        return None
+    t = text.strip()
+    if not t or NOISE.search(t):
+        return None
+    return t
+
+
+# LLM이 샘플을 읽기 전, 로컬에서 시크릿/PII를 지운다 (네트워크 전송 없음).
+REDACT_RULES = [
+    (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "<email>"),
+    (re.compile(r"\b(?:sk|pk|rk)-[A-Za-z0-9]{16,}\b"), "<key>"),
+    (re.compile(r"\bghp_[A-Za-z0-9]{20,}\b"), "<token>"),
+    (re.compile(r"\bAKIA[0-9A-Z]{12,}\b"), "<aws-key>"),
+    (re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b"), "<jwt>"),
+    (re.compile(r"\b[0-9a-fA-F]{32,}\b"), "<hash>"),
+]
+
+
+def redact(t):
+    for rx, rep in REDACT_RULES:
+        t = rx.sub(rep, t)
+    return t
+
+
+def decode_project(dirname):
+    """Claude 프로젝트 폴더명(-Users-macbook9-Documents-foo) → 대략 경로."""
+    return dirname.replace("-", "/", 0).lstrip("-").replace("-", "/")
+
+
+def parse_ts(s):
+    try:
+        return datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def list_sources():
+    out = {"claude": {"exists": os.path.isdir(CLAUDE), "projects": []},
+           "codex": {"exists": os.path.isdir(CODEX), "sessions": 0, "range": None}}
+    if out["claude"]["exists"]:
+        for d in sorted(os.listdir(CLAUDE)):
+            p = os.path.join(CLAUDE, d)
+            if not os.path.isdir(p):
+                continue
+            files = glob.glob(os.path.join(p, "*.jsonl"))
+            if not files:
+                continue
+            mt = [os.path.getmtime(f) for f in files]
+            out["claude"]["projects"].append({
+                "folder": d,
+                "path_hint": "/" + d.lstrip("-").replace("-", "/"),
+                "sessions": len(files),
+                "last": datetime.fromtimestamp(max(mt)).strftime("%Y-%m-%d"),
+            })
+    if out["codex"]["exists"]:
+        files = glob.glob(os.path.join(CODEX, "**", "*.jsonl"), recursive=True)
+        out["codex"]["sessions"] = len(files)
+        if files:
+            mt = [os.path.getmtime(f) for f in files]
+            out["codex"]["range"] = [
+                datetime.fromtimestamp(min(mt)).strftime("%Y-%m-%d"),
+                datetime.fromtimestamp(max(mt)).strftime("%Y-%m-%d"),
+            ]
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+
+
+def match_project(text, filters):
+    if not filters:
+        return True
+    return any(f.strip() and f.strip().lower() in text.lower() for f in filters)
+
+
+def extract(sources, projects, since, out_path):
+    since_dt = parse_ts(since + "T00:00:00+00:00") if since else None
+    msgs = []
+
+    if "claude" in sources and os.path.isdir(CLAUDE):
+        for d in os.listdir(CLAUDE):
+            pdir = os.path.join(CLAUDE, d)
+            if not os.path.isdir(pdir):
+                continue
+            if not match_project(d, projects):
+                continue
+            for f in glob.glob(os.path.join(pdir, "*.jsonl")):
+                for l in open(f, encoding="utf-8", errors="ignore"):
+                    try:
+                        o = json.loads(l)
+                    except Exception:
+                        continue
+                    if o.get("type") != "user":
+                        continue
+                    if since_dt:
+                        ts = parse_ts(o.get("timestamp"))
+                        if ts and ts < since_dt:
+                            continue
+                    m = o.get("message", {})
+                    if m.get("role") != "user":
+                        continue
+                    c = m.get("content")
+                    if isinstance(c, str):
+                        t = clean(c)
+                        if t:
+                            msgs.append(("claude", t))
+                    elif isinstance(c, list):
+                        for b in c:
+                            if isinstance(b, dict) and b.get("type") == "text":
+                                t = clean(b.get("text", ""))
+                                if t:
+                                    msgs.append(("claude", t))
+
+    if "codex" in sources and os.path.isdir(CODEX):
+        for f in glob.glob(os.path.join(CODEX, "**", "*.jsonl"), recursive=True):
+            cwd = ""
+            rows = []
+            for l in open(f, encoding="utf-8", errors="ignore"):
+                try:
+                    o = json.loads(l)
+                except Exception:
+                    continue
+                if o.get("type") == "session_meta":
+                    cwd = str(o.get("payload", {}).get("cwd", ""))
+                rows.append(o)
+            if not match_project(cwd or f, projects):
+                continue
+            for o in rows:
+                p = o.get("payload", {})
+                if not isinstance(p, dict):
+                    continue
+                if since_dt:
+                    ts = parse_ts(o.get("timestamp"))
+                    if ts and ts < since_dt:
+                        continue
+                if p.get("type") == "user_message":
+                    t = clean(p.get("message") or p.get("text", ""))
+                    if t:
+                        msgs.append(("codex", t))
+                elif p.get("type") == "message" and p.get("role") == "user":
+                    for b in p.get("content", []):
+                        if isinstance(b, dict) and b.get("type") in ("input_text", "text"):
+                            t = clean(b.get("text", ""))
+                            if t:
+                                msgs.append(("codex", t))
+
+    seen, uniq = set(), []
+    for s, t in msgs:
+        if (s, t) in seen:
+            continue
+        seen.add((s, t))
+        uniq.append((s, t))
+
+    with open(out_path, "w", encoding="utf-8") as w:
+        for s, t in uniq:
+            w.write(json.dumps({"src": s, "t": redact(t)}, ensure_ascii=False) + "\n")
+
+    claude_n = sum(1 for s, _ in uniq if s == "claude")
+    codex_n = sum(1 for s, _ in uniq if s == "codex")
+    lens = [len(t) for _, t in uniq] or [0]
+    print(json.dumps({
+        "total": len(uniq), "claude": claude_n, "codex": codex_n,
+        "median_len": sorted(lens)[len(lens) // 2],
+        "short_ratio_pct": round(sum(1 for x in lens if x < 25) / len(lens) * 100),
+        "out": out_path,
+    }, ensure_ascii=False, indent=2))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--list", action="store_true")
+    ap.add_argument("--sources", default="claude,codex")
+    ap.add_argument("--projects", default="")
+    ap.add_argument("--since", default="")
+    ap.add_argument("--out", default=os.path.expanduser("~/.claude/skills/my-persona/.msgs.jsonl"))
+    a = ap.parse_args()
+    if a.list:
+        list_sources()
+        return
+    sources = [s.strip() for s in a.sources.split(",") if s.strip()]
+    projects = [p for p in a.projects.split(",") if p.strip()] if a.projects else []
+    extract(sources, projects, a.since or None, a.out)
+
+
+if __name__ == "__main__":
+    main()

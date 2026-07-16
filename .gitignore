@@ -1,0 +1,21 @@
+# 개인 추출 데이터 — 절대 커밋 금지 (당신의 대화 발화가 들어있음)
+.msgs.jsonl
+*.msgs.jsonl
+
+# 개인 생성물 — 각 사용자 로그에서 만들어짐
+rules.json
+*.persona.md
+persona-*.md
+*_system_prompt.md
+
+# 설정 백업
+*.bak
+CLAUDE.md.bak
+
+# python / os
+__pycache__/
+*.pyc
+.DS_Store
+
+# 지속 발전 훅 큐 (개인 데이터)
+.pending/
