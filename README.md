@@ -28,15 +28,21 @@ Unlike fictional "persona" skills or one-off "summarize my chat history" prompts
 - Python 3
 - Optional: Codex CLI session logs
 
-## ⚡ Install (Claude Code plugin)
+## ⚡ Install
 
+Works as a plugin in **both Claude Code and Codex** (one repo, one command set).
+
+**Claude Code** (slash commands, or the `/plugin` UI → Marketplaces):
 ```text
-# 1) Add this repo as a marketplace (a private repo works if you have access)
 /plugin marketplace add kayeonk/work-like-me
-# 2) Install the plugin
 /plugin install my-persona@kayeon-plugins
-# 3) Activate
 /reload-plugins
+```
+
+**Codex** (terminal):
+```bash
+codex plugin marketplace add kayeonk/work-like-me
+codex plugin add my-persona@kayeon-plugins
 ```
 
 Then just say: **"내 페르소나 만들어줘"** (or `make my persona`). The skill walks you through
@@ -45,6 +51,19 @@ source selection → a short interview → review → install. Nothing leaves yo
 > **Local development:** `/plugin marketplace add ~/path/to/my-persona`, then install as above.
 > Your personal data lives in **`~/.my-persona/`** — outside the plugin — so it survives
 > updates and is never shipped.
+
+## Commands
+
+After installing, these slash commands are available (namespaced by the plugin):
+
+| Command | What it does |
+|---------|--------------|
+| `/my-persona:create` | Generate your persona from session logs and install it |
+| `/my-persona:dashboard` | Open the local dashboard to favorite / pause rules and apply |
+| `/my-persona:update` | Review newly accumulated signals and propose rule updates |
+| `/my-persona:auto` | Turn auto-suggested persona updates (over time) on/off |
+
+You can also just say **"내 페르소나 만들어줘"** (or "make my persona") to start.
 
 ## How it works
 

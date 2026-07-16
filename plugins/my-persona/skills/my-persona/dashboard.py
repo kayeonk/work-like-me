@@ -95,7 +95,7 @@ h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;opacity:.55;marg
 <div id=list></div>
 <script>
 let data=null, orig=null;
-const SRC={induced:'대화 분석',interview:'직접 답변',hook:'자동 관찰'};
+const SRC={induced:'대화 분석',interview:'직접 답변',hook:'자동 제안'};
 function snap(){return JSON.stringify(data.rules.map(r=>[r.id, r.enabled!==false, !!r.favorite]))}
 function isDirty(){return snap()!==orig}
 async function load(){data=await (await fetch('/rules.json')).json(); orig=snap(); render(); refreshDirty()}
