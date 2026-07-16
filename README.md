@@ -1,5 +1,7 @@
 # work-like-me
 
+**English** · [한국어](./README.ko.md)
+
 > Turn your real AI coding-session history into a personal, **directive system prompt** —
 > generated and installed **locally**, privacy-first.
 
