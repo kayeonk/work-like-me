@@ -2,17 +2,23 @@
 name: update
 description: >
   대화가 쌓이며 모인 새 신호를 검토해 페르소나 규칙 업데이트를 제안·반영한다. 사용자가
-  "페르소나 업데이트 / 새로 반영할 내용 검토 / my-persona 업데이트"라고 할 때 사용.
+  "페르소나 업데이트 / 새로 반영할 내용 검토 / wlm 업데이트"라고 할 때 사용.
 ---
 
-# my-persona: update — 제안형 업데이트 검토
+# wlm: update — 제안형 업데이트 검토
 
 `${SKILL_DIR}`는 이 SKILL.md 디렉터리, 공용 스크립트는 `${SKILL_DIR}/../../scripts/`.
 
-1. `~/.my-persona/.pending/queue.jsonl` 을 읽어 새 신호를 분석한다.
+0. **먼저 스캔으로 큐를 최신화한다.** 자동 훅은 Claude 전용(SessionEnd)이라 Codex 신호는 큐에 안 쌓인다.
+   이 단계가 Claude+Codex 양쪽 최신 발화를 직접 스캔해 큐를 채우므로, 어느 도구를 쓰든 검토가 동작한다.
+   ```bash
+   python3 ${SKILL_DIR}/../../scripts/capture.py --scan
+   ```
+1. `~/.work-like-me/.pending/queue.jsonl` 을 읽어 새 신호를 분석한다. (큐가 크면 대표 표본만 보고 판단하되,
+   전부 규칙으로 만들지 말고 **진짜 새로운 것만** 추린다.)
 2. **진짜 새롭거나 기존 규칙과 충돌하는 패턴이 있을 때만** 후보 규칙(신규/수정)을 근거와 함께 제안한다.
    없으면 "반영할 변경이 없습니다"라고 알린다.
-3. 사용자가 고른 것만 `~/.my-persona/rules.json`에 반영한다(source `hook`).
+3. 사용자가 고른 것만 `~/.work-like-me/rules.json`에 반영한다(source `hook`).
 4. 설치 — 미리보기 → 승인 후 기록:
    ```bash
    python3 ${SKILL_DIR}/../../scripts/install.py --from-rules --target ~/.claude/CLAUDE.md          # 미리보기

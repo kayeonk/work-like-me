@@ -7,17 +7,17 @@ description: >
   persona 만들어줘 / 내 작업 스타일 뽑아줘"라고 할 때 사용.
 ---
 
-# my-persona: create — 데이터 기반 자기 페르소나 생성
+# wlm: create — 데이터 기반 자기 페르소나 생성
 
 ## 실행 규약 (에이전트)
 이 SKILL.md가 있는 디렉터리를 `${SKILL_DIR}`로 삼아라. 공용 스크립트는 **`${SKILL_DIR}/../../scripts/`**에
 있다(예: `${SKILL_DIR}/../../scripts/extract.py`). 개인 데이터(rules.json·.pending·.msgs.jsonl)는 위치와
-무관하게 항상 **`~/.my-persona/`**에 저장된다.
+무관하게 항상 **`~/.work-like-me/`**에 저장된다.
 
 ## 프라이버시 (먼저 고지)
 - **완전 로컬.** 로그를 외부로 전송하지 않는다.
 - 발화를 읽기 전에 `extract.py`가 **시크릿·이메일·토큰·해시를 자동 마스킹**한다.
-- 개인 데이터(rules.json 등)는 `~/.my-persona/`에만 저장되고 repo/플러그인에 포함되지 않는다.
+- 개인 데이터(rules.json 등)는 `~/.work-like-me/`에만 저장되고 repo/플러그인에 포함되지 않는다.
 
 ## 좋은 결과 조건
 - 발화 수백 건 이상 + 일관된 이력이면 초안 품질이 좋다. 적으면 Step 3에서 경고한다.
@@ -31,7 +31,8 @@ description: >
 python3 ${SKILL_DIR}/../../scripts/extract.py --list
 ```
 출력(소스별 프로젝트·세션 수·기간)을 보여주고 물어본다: ① 소스(Claude/Codex/둘 다) ② 프로젝트(전체/특정)
-③ 기간(전체/최근 N개월) ④ 업무/개인.
+③ 기간(전체/최근 N개월). 스코프는 페르소나를 나누는 경계가 아니라 **표본 품질 필터**다 — 관련 없는
+프로젝트를 빼서 샘플을 깨끗하게 만드는 용도. (기존 rules.json이 있으면 이번 생성이 교체함을 미리 알린다.)
 
 ## Step 1 — 발화 추출 (레닥션 포함)
 ```bash
@@ -39,10 +40,15 @@ python3 ${SKILL_DIR}/../../scripts/extract.py --sources claude,codex --projects 
 ```
 총 건수/소스별/길이 중앙값을 보고한다.
 
-## Step 2 — 정량 신호 + 대표 샘플
+## Step 2 — 대표 샘플 (주 신호) + 정량 보조
 ```bash
-python3 ${SKILL_DIR}/../../scripts/analyze.py    # 패턴 빈도(보조 신호)
-python3 ${SKILL_DIR}/../../scripts/sample.py     # LLM 귀납용 대표 샘플
+python3 ${SKILL_DIR}/../../scripts/sample.py     # LLM 귀납용 대표 샘플 (주 신호)
+```
+`sample.py` 출력이 분석의 핵심이다 — 언어·도메인 무관. `analyze.py`는 **한국어·개발 위주 정규식 빈도**라
+참고용 보조일 뿐이니, 한국어 개발 로그가 아니면 결과가 무의미할 수 있다. 필요할 때만 선택 실행하고
+귀납의 근거로 삼지 마라:
+```bash
+python3 ${SKILL_DIR}/../../scripts/analyze.py    # (선택) 한국어·개발 패턴 빈도, 참고용
 ```
 
 ## Step 3 — 표본 가드
@@ -50,18 +56,27 @@ python3 ${SKILL_DIR}/../../scripts/sample.py     # LLM 귀납용 대표 샘플
 
 ## Step 4 — 패턴 귀납 → rules.json 작성 (LLM = 너가 직접)
 `sample.py` 출력을 읽고 규칙을 귀납한다. 정규식 빈도에 의존하지 말고 실제 발화에서 근거를 찾는다.
-카테고리: `가치관 / 판단 / 소통 / 절대규칙 / 검증 / 라이브러리 / git / 상황별`.
-각 규칙을 `rules.example.json` 스키마로 `~/.my-persona/rules.json`에 기록한다:
-- `text`는 지시형("너는 ~하라 / 하지 마라"). `confidence`(상/중/하)·`evidence`(근거 발화 수·예시) 필수.
+**카테고리는 그 사람 도메인에 맞게 자유롭게 정한다(고정 목록 없음).** 공통 축은 보통
+`가치관 / 판단 / 소통 / 절대규칙`이고, 도메인별 축을 덧붙인다(개발이면 검증·git 등, 기획이면 리서치·전략 등,
+글쓰기면 문체·구성 등). 개발에 국한하지 마라 — 카테고리 이름이 곧 섹션 제목이 된다.
+각 규칙을 `rules.example.json` 스키마로 `~/.work-like-me/rules.json`에 기록한다:
+- `text`는 지시형("너는 ~하라 / 하지 마라"). `confidence`(ko: `상/중/하`, en: `high/med/low`)·
+  `evidence`(근거 발화 수·예시) 필수. 확신도는 `meta.lang`에 맞춘 값으로 쓴다(대시보드가 색상·라벨 자동 대응).
 - `source: "induced"`. 근거 약하면 `confidence: "하"`로 정직하게.
 - `meta.identity`(작업 스타일 한 문장), `meta.priority_order`(우선순위 배열)도 채운다.
+- `meta.lang`: 사용자의 주 언어를 추론해 `"ko"` 또는 `"en"`으로 설정한다(대시보드·프롬프트의 고정 문구 언어).
+  규칙 본문·카테고리는 원래 쓰던 언어 그대로 두면 되고, `lang`은 그걸 감싸는 UI/크롬에만 영향. 판단 어려우면 `"en"`.
 
 ## Step 5 — 상황별 드릴다운 인터뷰 (추측 최소화)
 데이터로 못 정하거나 애매한 부분은 반드시 질문한다(추측 금지).
 - **확신도 게이팅**: `confidence: 하/중` 규칙은 전부 확인 질문으로 돌린다.
-- **상황별 드릴다운**: 버그/이상동작, 코드리뷰, 리팩터 범위, 새 라이브러리 도입, PR·커밋, 문서·글, 테스트,
-  완료 검증, 우선순위 충돌 순서 — 각각 "이 상황에선 구체적으로 어떤 규칙?"을 물어 세밀한 트리거→행동
-  규칙을 만든다(category `상황별`, source `interview`).
+- **상황별 드릴다운**: **그 사람 도메인에서 자주 나오는 상황**을 뽑아 "이 상황에선 구체적으로 어떤 규칙?"을
+  물어 세밀한 트리거→행동 규칙을 만든다(category `상황별`, source `interview`).
+  도메인에 맞게: 개발이면 버그/코드리뷰/리팩터/PR 등, 기획이면 기획서/리뷰/우선순위 결정 등, 글쓰기면 초안/퇴고 등.
+  도메인 무관 공통: 결과가 기대와 다를 때, 완료·검증 기준, 우선순위 충돌 순서.
+- **모드별 체크포인트도 상황별 규칙으로.** 한 사람이 여러 모드를 오가면(예: 풀스택의 FE/BE) 판단·소통
+  스타일은 대개 공통이고 **챙기는 체크포인트만** 다르다. 이런 차이는 별도 페르소나가 아니라
+  `"FE 작업 시: 반응형·접근성 확인"`, `"BE 작업 시: 트랜잭션·롤백 확인"`처럼 **한 페르소나 안의 상황별 규칙**으로 담아라.
 추가로 목적·출력 언어·설치 대상(Claude/Codex)을 확인해 rules.json에 반영한다.
 
 ## Step 6 — 컴파일 & 리뷰
@@ -78,12 +93,18 @@ python3 ${SKILL_DIR}/../../scripts/install.py --from-rules --target ~/.claude/CL
 Codex는 `--target ~/.codex/AGENTS.md`. 구분자 블록에만 기록(멱등), 최초 1회 `.bak` 백업.
 **승인 없이 자동 기록하지 않는다.**
 
+설치가 끝나면 검토 baseline을 찍는다(방금 만든 페르소나가 이미 전체 이력을 반영하므로,
+이후 update가 생성 이전 발화를 다시 훑지 않게 함):
+```bash
+python3 ${SKILL_DIR}/../../scripts/capture.py --mark-reviewed
+```
+
 ---
 
 ## 이후
-- 규칙을 켜고 끄거나 즐겨찾기 → **dashboard 스킬**(`/my-persona:dashboard`, Codex `$dashboard`).
+- 규칙을 켜고 끄거나 즐겨찾기 → **dashboard 스킬**(`/wlm:dashboard`, Codex `$dashboard`).
 - 새로 쌓인 신호 반영 → **update 스킬**. 자동 제안 켜기/끄기 → **auto 스킬**.
 
 ## 원칙
 - 사용자에게 하는 말은 담백한 존댓말로, 쉽게. 전문용어·내부 수치 노출 금지.
-- 근거 없이 단정하지 마라. 개인화는 `~/.my-persona/`에만. 완전 로컬.
+- 근거 없이 단정하지 마라. 개인화는 `~/.work-like-me/`에만. 완전 로컬.

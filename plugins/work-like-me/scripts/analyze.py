@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""추출된 발화에서 판단·소통 패턴 빈도를 집계. 원문은 저장/출력하지 않고 빈도만 낸다."""
+"""추출된 발화에서 판단·소통 패턴 빈도를 집계. 원문은 저장/출력하지 않고 빈도만 낸다.
+
+주의: 아래 PATTERNS는 **한국어·개발 로그에 튜닝된 정규식**이다. 다른 언어/도메인에서는
+빈도가 0에 가깝거나 왜곡될 수 있다. 이 스크립트는 어디까지나 **참고용 보조 신호**이며,
+페르소나 귀납의 주 신호는 sample.py 출력을 LLM이 직접 읽는 것이다(언어·도메인 무관)."""
 import json, re, sys, argparse, os
 from collections import defaultdict
 
-DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
+DATA_DIR = os.path.expanduser(os.environ.get("WORK_LIKE_ME_DATA", "~/.work-like-me"))
 
 # 우선순위 축(가치관·기술판단) 중심 패턴
 PATTERNS = {

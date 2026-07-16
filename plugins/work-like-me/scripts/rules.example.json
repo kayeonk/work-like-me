@@ -2,6 +2,7 @@
   "_comment": "형식 참고용 템플릿. 실제 rules.json은 스킬을 실행하면 당신의 로그에서 생성되며, gitignore되어 repo에 올라가지 않습니다. compile.py/install.py는 rules.json(개인 파일)을 읽습니다.",
   "meta": {
     "version": 2,
+    "lang": "ko | en (UI·프롬프트 고정 문구 언어. 규칙 내용은 무관. 기본 en)",
     "identity": "<로그에서 귀납된 너의 작업 스타일 한 문장>",
     "priority_order": ["<우선순위1>", "<우선순위2>", "<...>"],
     "generated_at": "<YYYY-MM-DD>"
@@ -14,7 +15,7 @@
       "text": "<지시형 규칙 본문: 너는 ~하라 / 하지 마라>",
       "enabled": true,
       "favorite": false,
-      "confidence": "상|중|하",
+      "confidence": "상|중|하 (ko) 또는 high|med|low (en) — meta.lang에 맞춰",
       "evidence": { "count": 0, "note": "<근거가 된 발화 수/설명>" },
       "source": "induced|interview|hook",
       "created_at": "<YYYY-MM-DD>",

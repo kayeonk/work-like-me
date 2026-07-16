@@ -6,7 +6,7 @@
 """
 import json, os, argparse
 
-DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
+DATA_DIR = os.path.expanduser(os.environ.get("WORK_LIKE_ME_DATA", "~/.work-like-me"))
 
 
 def main():

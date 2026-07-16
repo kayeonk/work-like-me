@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """생성된 페르소나 프롬프트를 전역 설정 파일에 안전하게 설치.
 
-- 구분자 블록(<!-- my-persona:start --> … <!-- my-persona:end -->) 안에만 기록.
+- 구분자 블록(<!-- work-like-me:start --> … <!-- work-like-me:end -->) 안에만 기록.
 - 블록이 이미 있으면 그 부분만 교체(멱등). 파일의 나머지는 절대 안 건드림.
 - 최초 1회 백업(.bak) 생성.
 - 기본은 --dry-run(미리보기). 실제 기록은 --apply 필요.
@@ -14,10 +14,11 @@
 import argparse, os, shutil, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.expanduser(os.environ.get("MY_PERSONA_DATA", "~/.my-persona"))
+DATA_DIR = os.path.expanduser(os.environ.get("WORK_LIKE_ME_DATA", "~/.work-like-me"))
+RULES = os.path.join(DATA_DIR, "rules.json")
 
-START = "<!-- my-persona:start -->"
-END = "<!-- my-persona:end -->"
+START = "<!-- work-like-me:start -->"
+END = "<!-- work-like-me:end -->"
 
 
 def build_block(prompt):
@@ -39,7 +40,7 @@ def main():
     ap.add_argument("--prompt-file", default="")
     ap.add_argument("--from-rules", action="store_true",
                     help="rules.json을 compile.py로 컴파일해 설치")
-    ap.add_argument("--rules", default=os.path.join(DATA_DIR, "rules.json"))
+    ap.add_argument("--rules", default="", help="rules.json 경로 직접 지정(기본: ~/.work-like-me/rules.json)")
     ap.add_argument("--target", required=True)
     ap.add_argument("--apply", action="store_true")
     a = ap.parse_args()
@@ -47,7 +48,8 @@ def main():
     target = os.path.expanduser(a.target)
     if a.from_rules:
         import json, compile as compiler
-        data = json.load(open(os.path.expanduser(a.rules), encoding="utf-8"))
+        rules = a.rules or RULES
+        data = json.load(open(os.path.expanduser(rules), encoding="utf-8"))
         prompt = compiler.compile_md(data)
     elif a.prompt_file:
         prompt = open(os.path.expanduser(a.prompt_file), encoding="utf-8").read()
@@ -61,7 +63,7 @@ def main():
         print("=== DRY-RUN (미기록) ===")
         print(f"대상: {target}")
         print(f"기존 파일: {'있음 (' + str(len(existing.splitlines())) + '줄)' if existing else '없음 → 새로 생성'}")
-        print(f"my-persona 블록: {'교체' if START in existing else '신규 삽입'}")
+        print(f"work-like-me 블록: {'교체' if START in existing else '신규 삽입'}")
         print(f"기록 후 총 줄 수: {len(new.splitlines())}")
         print("\n--- 삽입될 블록 미리보기(앞 20줄) ---")
         print("\n".join(block.splitlines()[:20]))

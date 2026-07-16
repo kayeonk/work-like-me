@@ -6,7 +6,7 @@ description: >
   라고 할 때 사용.
 ---
 
-# my-persona: dashboard — 규칙 관리 대시보드
+# wlm: dashboard — 규칙 관리 대시보드
 
 `${SKILL_DIR}`는 이 SKILL.md 디렉터리, 공용 스크립트는 `${SKILL_DIR}/../../scripts/`.
 
@@ -17,7 +17,7 @@ python3 ${SKILL_DIR}/../../scripts/dashboard.py
 실행되면 사용자에게 접속 주소(기본 http://127.0.0.1:8765)를 안내하고, 종료는 Ctrl+C라고 알려라.
 
 대시보드 동작:
-- 규칙을 켜고 끄거나 ★ 즐겨찾기한 것은 **화면에서만** 바뀐다(초안). `~/.my-persona/rules.json`은 아직 안 바뀜.
+- 규칙을 켜고 끄거나 ★ 즐겨찾기한 것은 **화면에서만** 바뀐다(초안). `~/.work-like-me/rules.json`은 아직 안 바뀜.
 - **"변경 적용"**을 눌러야 그때 저장하고 `~/.claude/CLAUDE.md`·`~/.codex/AGENTS.md`에 설치된다.
 - 적용하지 않고 창을 닫으면 변경은 사라진다.
 
