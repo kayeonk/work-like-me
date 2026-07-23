@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""work-like-me 지속 진화 — SessionEnd 훅 + 훅 설치/리뷰 관리.
+"""work-like-me 지속 진화 — SessionEnd 훅 + 자동 제안 on/off + 리뷰 관리.
+
+자동 제안은 플러그인의 네이티브 SessionEnd 훅(hooks/hooks.json)으로 **기본 켜짐**이다.
+끄면 opt-out 플래그(.auto-off)만 만들고, 훅이 실행돼도 즉시 빠져나간다. 사용자 settings.json은 건드리지 않는다.
 
 모드:
-  (인자 없음)        SessionEnd 훅. 끝난 세션 발화를 레닥션해 .pending/queue.jsonl 축적.
+  (인자 없음)        SessionEnd 훅. 자동 제안이 켜져 있으면 끝난 세션 발화를 레닥션해 .pending/queue.jsonl 축적.
                      신규 신호 >= THRESHOLD  AND  마지막 리뷰 후 COOLDOWN_DAYS 경과 → .pending/flag 기록.
                      (flag = 대시보드 배지 = "업데이트 검토 권장". 방해하지 않음)
   --scan             훅과 무관하게 Claude+Codex 최신 발화를 즉석 스캔해 큐에 반영(도구 무관).
-                     Codex는 SessionEnd 훅이 없으므로, update 스킬이 이 모드로 양쪽을 따라잡는다.
-  --install-hook     ~/.claude/settings.json 의 SessionEnd 에 이 스크립트를 등록(백업, 중복 방지).
-  --uninstall-hook   등록 해제.
-  --hook-status      등록 여부 출력.
+  --hook-status      자동 제안 켜짐/꺼짐 출력.
+  --install-hook     자동 제안 켜기(.auto-off 제거). 기본이 켜짐이라 보통 필요 없음.
+  --uninstall-hook   자동 제안 끄기(.auto-off 생성).
   --mark-reviewed    리뷰 완료 표시(쿨다운 리셋) + 큐/flag 정리.
 
 훅으로 매 세션 실행되므로 기본 모드는 절대 크래시하지 않는다(항상 exit 0).
@@ -24,8 +26,7 @@ PENDING_DIR = os.path.join(DATA_DIR, ".pending")
 QUEUE = os.path.join(PENDING_DIR, "queue.jsonl")
 FLAG = os.path.join(PENDING_DIR, "flag")
 STATE = os.path.join(PENDING_DIR, "state.json")
-SETTINGS = os.path.expanduser("~/.claude/settings.json")
-HOOK_CMD = f"python3 {os.path.join(HERE, 'capture.py')}"
+AUTO_OFF = os.path.join(DATA_DIR, ".auto-off")   # 이 파일이 있으면 자동 제안 꺼짐(기본은 없음=켜짐)
 
 THRESHOLD = 30       # 신규 신호 이만큼 쌓여야
 COOLDOWN_DAYS = 7    # 마지막 리뷰 후 이만큼 지나야 배지
@@ -93,6 +94,8 @@ def parse_user_utterances(path):
 
 def do_capture():
     try:
+        if os.path.exists(AUTO_OFF):    # 자동 제안 꺼짐 → 아무것도 안 함
+            return
         os.makedirs(PENDING_DIR, exist_ok=True)
         state = load_state()
         if "last_review" not in state:                 # 최초 사용 시점을 쿨다운 기준으로
@@ -190,58 +193,34 @@ def mark_reviewed():
     print("반영했습니다.")
 
 
-# ---------- 훅 설치/해제 ----------
-def _load_settings():
-    return json.load(open(SETTINGS, encoding="utf-8")) if os.path.exists(SETTINGS) else {}
+# ---------- 자동 제안 on/off (opt-out 플래그) ----------
+# 자동 제안은 플러그인 네이티브 SessionEnd 훅으로 기본 켜짐. 끄면 .auto-off 플래그만 만든다.
+def is_enabled():
+    return not os.path.exists(AUTO_OFF)
 
 
-def hook_registered(d):
-    for g in d.get("hooks", {}).get("SessionEnd", []):
-        for h in (g.get("hooks", []) if isinstance(g, dict) else []):
-            if isinstance(h, dict) and h.get("command", "").rstrip().endswith("capture.py"):
-                return True
-    return False
+def enable():
+    try:
+        os.remove(AUTO_OFF)
+    except OSError:
+        pass
+    print("자동 제안을 켰습니다.")
 
 
-def install_hook():
-    d = _load_settings()
-    if hook_registered(d):
-        print("이미 켜져 있습니다.")
-        return
-    import shutil
-    if os.path.exists(SETTINGS):
-        shutil.copy2(SETTINGS, SETTINGS + ".bak-mypersona")
-    se = d.setdefault("hooks", {}).setdefault("SessionEnd", [])
-    grp = next((g for g in se if isinstance(g, dict) and g.get("matcher") == "*"), None)
-    if grp is None:
-        grp = {"matcher": "*", "hooks": []}
-        se.append(grp)
-    grp.setdefault("hooks", []).append({"type": "command", "command": HOOK_CMD})
-    json.dump(d, open(SETTINGS, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print("자동 업데이트 제안을 켰습니다. 기존 설정은 백업해 두었습니다.")
-
-
-def uninstall_hook():
-    d = _load_settings()
-    if not hook_registered(d):
-        print("켜져 있지 않습니다.")
-        return
-    for g in d.get("hooks", {}).get("SessionEnd", []):
-        if isinstance(g, dict):
-            g["hooks"] = [h for h in g.get("hooks", [])
-                          if not (isinstance(h, dict) and h.get("command", "").rstrip().endswith("capture.py"))]
-    json.dump(d, open(SETTINGS, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print("자동 업데이트 제안을 껐습니다.")
+def disable():
+    os.makedirs(DATA_DIR, exist_ok=True)
+    open(AUTO_OFF, "w").write("off")
+    print("자동 제안을 껐습니다.")
 
 
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else ""
     if arg == "--install-hook":
-        install_hook()
+        enable()
     elif arg == "--uninstall-hook":
-        uninstall_hook()
+        disable()
     elif arg == "--hook-status":
-        print("켜짐" if hook_registered(_load_settings()) else "꺼짐")
+        print("켜짐" if is_enabled() else "꺼짐")
     elif arg == "--mark-reviewed":
         mark_reviewed()
     elif arg == "--scan":

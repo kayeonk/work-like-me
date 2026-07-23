@@ -3,6 +3,19 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); this project uses semantic-ish versioning.
 
+## [0.7.0]
+
+### Changed
+- **Auto-suggestion is now on by default.** The SessionEnd hook is declared in the plugin's own
+  `hooks/hooks.json` (native), so it's active on install without touching your `~/.claude/settings.json`.
+  It only accumulates redacted signals locally; nothing is applied without review. Turn it off with
+  the `auto` skill, which writes a `~/.work-like-me/.auto-off` opt-out flag (the hook no-ops when set).
+- Removed the old settings.json-mutating hook install/uninstall in favor of the opt-out flag.
+
+### Added
+- `dashboard` skill documents how to stop a running dashboard server.
+- README install block includes `/reload-plugins`.
+
 ## [0.6.4]
 
 ### Fixed

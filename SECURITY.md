@@ -49,8 +49,10 @@ the missing pattern.
 
 - Global config (only inside a marked block, with a one-time `.bak` backup):
   `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`.
-- Optional (opt-in via the `auto` skill): a `SessionEnd` hook entry in `~/.claude/settings.json`
-  (backed up first). This is Claude-only and never enabled without your explicit consent.
+- A `SessionEnd` hook (declared in the plugin's own `hooks/hooks.json`, Claude-only) runs on by
+  default. It only accumulates redacted signals **locally** under `~/.work-like-me/`; it makes no
+  network calls and applies nothing without your review. It does **not** modify your
+  `~/.claude/settings.json`. Turn it off with the `auto` skill (writes a `~/.work-like-me/.auto-off` flag).
 
 ## Reporting a vulnerability
 

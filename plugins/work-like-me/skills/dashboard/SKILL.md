@@ -14,7 +14,13 @@ description: >
 ```bash
 python3 ${SKILL_DIR}/../../scripts/dashboard.py
 ```
-실행되면 사용자에게 접속 주소(기본 http://127.0.0.1:8765)를 안내하고, 종료는 Ctrl+C라고 알려라.
+실행되면 사용자에게 접속 주소(기본 http://127.0.0.1:8765)를 안내한다.
+
+**종료** — 사용자가 "대시보드 꺼줘 / 종료해줘"라고 하면 실행 중인 서버를 정리한다:
+```bash
+pkill -f "work-like-me/scripts/dashboard.py"     # 백그라운드로 띄운 서버 종료
+```
+(포트를 바꿔 여러 개 띄웠으면 `pkill -f "dashboard.py --port <포트>"`. 직접 띄운 창이면 그 창에서 Ctrl+C도 됨.)
 
 대시보드 동작:
 - 규칙을 켜고 끄거나 ★ 즐겨찾기한 것은 **화면에서만** 바뀐다(초안). `~/.work-like-me/rules.json`은 아직 안 바뀜.

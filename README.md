@@ -22,7 +22,7 @@ installs it into your global AI config — so every project inherits how you act
 - **Directive** — produces an installable `You must… / Do not…` prompt, not a description.
 - **Manageable** — rules live in a registry; favorite / pause each one from a local dashboard.
 - **Language-agnostic** — Korean or English UI and prompt, chosen at creation.
-- **Self-evolving (opt-in)** — a hook accumulates new signals and *proposes* updates over time.
+- **Self-evolving** — a SessionEnd hook (on by default, local-only) accumulates new signals and *proposes* updates over time. Turn it off anytime with the `auto` skill.
 
 ![work-like-me dashboard](docs/dashboard.gif)
 
@@ -37,8 +37,9 @@ installs it into your global AI config — so every project inherits how you act
 ```text
 /plugin marketplace add kayeonk/work-like-me
 /plugin install wlm@kayeonk
+/reload-plugins
 ```
-Restart Claude Code so the skills load, then type `/` — you should see `/wlm:create`.
+If `/reload-plugins` isn't available in your build, restart Claude Code. Then type `/` — you should see `/wlm:create`.
 
 **Codex**
 ```bash
@@ -102,8 +103,9 @@ inside a marked block, backs up first).
   reinstall in one click. Editing `rules.json` directly works too.
 - **Proposal-based updates** — say **"wlm 업데이트"**; each run scans your recent Claude **and** Codex
   sessions (`capture.py --scan`) and *proposes* changes. Nothing is applied without your OK.
-- **Auto-badge (Claude only)** — the `auto` skill registers a `SessionEnd` hook that quietly
-  accumulates signals and raises a dashboard badge. Codex has no such hook, but `update` self-scans both.
+- **Auto-badge (Claude only, on by default)** — the plugin ships a `SessionEnd` hook that quietly
+  accumulates signals locally and raises a dashboard badge. It doesn't touch your `settings.json`;
+  the `auto` skill turns it off (opt-out flag). Codex has no such hook, but `update` self-scans both.
 
 ## Limitations
 

@@ -9,20 +9,17 @@ description: >
 
 `${SKILL_DIR}`는 이 SKILL.md 디렉터리, 공용 스크립트는 `${SKILL_DIR}/../../scripts/`.
 
-현재 상태를 먼저 확인하고, 사용자에게 켤지/끌지 물어라(전문용어·수치 없이):
-> "대화가 쌓이면 가끔 새로 반영할 내용을 제안해 드릴까요?"
+자동 제안은 **기본 켜짐**이다(플러그인의 네이티브 SessionEnd 훅). 현재 상태를 확인하고, 사용자가 원하면 끈다:
 
 ```bash
 python3 ${SKILL_DIR}/../../scripts/capture.py --hook-status     # 현재 상태(켜짐/꺼짐)
-python3 ${SKILL_DIR}/../../scripts/capture.py --install-hook    # 켜기
-python3 ${SKILL_DIR}/../../scripts/capture.py --uninstall-hook  # 끄기
+python3 ${SKILL_DIR}/../../scripts/capture.py --uninstall-hook  # 끄기(.auto-off 플래그)
+python3 ${SKILL_DIR}/../../scripts/capture.py --install-hook    # 다시 켜기
 ```
 
-- 켜면 대화가 끝날 때마다 새 신호를 조용히 모으고, 충분히 쌓이면 대시보드에 알림만 띄운다(방해 없음).
-- `/wlm:update`(Codex `$update`)로 언제든 검토할 수 있다. **자동으로 반영되는 것은 없다.**
-- 스킬만 설치해도 자동으로 안 켜진다 — 사용자가 직접 동의해야 켜진다(남의 전역 설정을 몰래 바꾸지 않기 위함).
-- **이 자동 훅은 Claude 전용이다**(Claude의 SessionEnd 훅에 등록). Codex는 세션 종료 훅이 없어 자동 수집은 안 된다.
-  다만 `update` 스킬이 실행 시 Claude+Codex 양쪽을 직접 스캔하므로, **Codex만 써도 검토·반영은 정상 동작한다.**
-  즉 이 훅은 "배지로 알려주는 편의"일 뿐, 검토의 전제조건이 아니다.
+- 켜져 있으면(기본) 대화가 끝날 때마다 새 신호를 조용히 로컬에 모으고, 충분히 쌓이면 대시보드에 알림만 띄운다(방해 없음).
+- 모으는 건 **전부 로컬**이고 네트워크 전송 없음. `/wlm:update`로 검토하기 전까진 **자동으로 반영되는 것은 없다.**
+- 끄기는 **사용자 settings.json을 건드리지 않는다** — `~/.work-like-me/.auto-off` 플래그만 만든다(훅은 그대로 있되 즉시 빠져나감).
+- **자동 훅은 Claude 전용이다**(Codex는 세션 종료 훅이 없음). 다만 `update`가 실행 시 Claude+Codex 양쪽을 직접 스캔하므로, **Codex만 써도 검토는 정상 동작한다.** 이 훅은 배지 알림 편의일 뿐 검토의 전제조건이 아니다.
 
 사용자에겐 "켰습니다 / 껐습니다" 정도로만 담백하게 안내한다.
